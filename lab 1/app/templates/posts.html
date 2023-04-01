@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mx-auto">
+    {% if post %}
+        <h1>{{ post.title }}</h1>
+        <p>Author post: {{post.author}}, Data public: {{post.date.strftime('%d.%m.%Y')}}</p>
+        <img src="{{ url_for('static', filename = 'img/' + post.img_id + '.jpg') }}" class="card-img-top mb-4 rounded mx-auto d-block" alt="images" style = "width:1000px">
+        <p class="card-text">{{post.text}}</p>
+        <div class="card mt-4 mb-4">
+            <div class="card-header">
+                <h5>Comment</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Write your comment here !</label>
+                        <textarea class="form-control" id="comment" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <h1>Latest Posts</h1>
+        {% for post in posts_list %}
+            <div class="col-4 mb-5">
+                <div class="card">
+                    <img src="{{ url_for('static', filename = 'img/' + post.img_id + '.jpg') }}" class="card-img-top" alt="...">
+                    <div class="card-body">
+                    <h5 class="card-title">{{post.title}}</h5>
+                    <p class="card-text">{{post.text | truncate(100)}}</p>
+                    <a href="{{ url_for('post', post_id=loop.index0) }}" class="btn btn-primary">Read more!</a>
+                    </div>
+                    <div class="card-footer">
+                        <p>Author post: {{post.author}}</p>
+                        <p>Data public: {{post.date.strftime('%d.%m.%Y')}}</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}
