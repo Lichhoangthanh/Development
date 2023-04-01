@@ -3,24 +3,46 @@
 {% block content %}
 <div class="row mx-auto">
     {% if post %}
-        <h1>{{ post.title }}</h1>
-        <p>Author post: {{post.author}}, Data public: {{post.date.strftime('%d.%m.%Y')}}</p>
-        <img src="{{ url_for('static', filename = 'img/' + post.img_id + '.jpg') }}" class="card-img-top mb-4 rounded mx-auto d-block" alt="images" style = "width:1000px">
-        <p class="card-text">{{post.text}}</p>
-        <div class="card mt-4 mb-4">
-            <div class="card-header">
-                <h5>Comment</h5>
+        <div class="page mb-4">
+            <h1>{{ post.title }}</h1>
+            <p>Author post: {{post.author}}, Data public: {{post.date.strftime('%d.%m.%Y')}}</p>
+            <img src="{{ url_for('static', filename = 'img/' + post.img_id + '.jpg') }}" class="card-img-top mb-4 rounded mx-auto d-block" alt="images" style = "width:1000px">
+            <p class="card-text">{{post.text}}</p>
+            <div class="card mt-4 mb-4">
+                <div class="card-header">
+                    <h5>Comment</h5>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Write your comment here !</label>
+                            <textarea class="form-control" id="comment" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </form>
+                </div>
             </div>
-            <div class="card-body">
-                <form>
-                    <div class="mb-3">
-                        <label for="comment" class="form-label">Write your comment here !</label>
-                        <textarea class="form-control" id="comment" rows="3"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Send</button>
-                </form>
+            <div class="comment">
+                <table>
+                    <tr>
+                        <td ><img src="{{ url_for('static', filename = 'img/avatar.jpg') }}" alt="" style = "width: 30px; border-radius: 90px;border: 1px solid black"></td>
+                        <td colspan = '2'>Here is a comment of reader</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td colspan='2'>
+                            <table class = "table">
+                                <tr>
+                                    <td><img src="{{ url_for('static', filename = 'img/avatar.jpg') }}" alt="" style = "width: 30px; border-radius: 90px;border: 1px solid black"></td>
+                                    <td>Here is a comment of reader</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
+
     {% else %}
         <h1>Latest Posts</h1>
         {% for post in posts_list %}
