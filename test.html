@@ -19,3 +19,23 @@
     <div></div>
     <div></div>
 </form>
+<h1></h1>
+<p></p>
+<table>
+    <tbody>
+        <tr>
+            <td>Theme</td>
+            <td>{% request.form.theme() %}</td>
+        </tr>
+        <tr>
+            <td>Messenger</td>
+            <td>{% request.form.msg() %}</td>
+        </tr>
+    </tbody>
+</table>
+<section name = "operation" id = "operation">
+    <option value="">+</option>
+    <option value="">-</option>
+    <option value="">*</option>
+    <option value="">/</option>
+</section>

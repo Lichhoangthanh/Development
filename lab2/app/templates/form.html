@@ -1,15 +1,29 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <form action="" method="POST">
+    <form method="POST">
         <div class="mb-3">
             <label class="form-label" for="theme">Theme</label>
-            <input class="form-control" type="text" name="theme" id="">
+            <input class="form-control" type="text" name="theme" id="theme">
         </div>
         <div class="mb-3">
             <label class="form-label" for="msg">Messenger</label>
-            <textarea class="form-control" name="" id="msg" cols="30" rows="10"></textarea>
+            <textarea class="form-control" name="msg" id="msg" cols="30" rows="10"></textarea>
         </div>
         <button class="btn btn-primary">Send</button>
     </form>
+    {% if request.method == 'POST' %}
+        <table>
+            <tbody>
+                <tr>
+                    <td>Theme</td>
+                    <td>{{ request.form.theme }}</td>
+                </tr>
+                <tr>
+                    <td>Messenger</td>
+                    <td>{{ request.form.msg }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {% endif %}
 {% endblock %}

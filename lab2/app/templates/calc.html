@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method="POST">
+        <p>{{ error_text }}</p>
+        <div class="mb-3">
+            <label class="form-label" for="first_num">First number</label>
+            <input class="form-control" type="text" name="first_num" id="first_num" value = "{{ request.form.first_num }}">
+        </div>
+        <select name = "operation" id = "operation">
+            <option {% if request.form.operation=='+' %}selected{% endif %}>+</option>
+            <option {% if request.form.operation=='-' %}selected{% endif %}>-</option>
+            <option {% if request.form.operation=='*' %}selected{% endif %}>*</option>
+            <option {% if request.form.operation=='/' %}selected{% endif %}>/</option>
+        </select>
+        <div class="mb-3">
+            <label class="form-label" for="second_num">Second number</label>
+            <input class="form-control" type="text" name="second_num" id="second_num" value = "{{ request.form.second_num }}">
+        </div>
+        <button class="btn btn-primary">Caculator</button>
+    </form>
+
+    <label class="form-label" for="answer">Answer</label>
+    <input class="form-control disable" type="text" name="answer" id="answer" value="{{answer}}">
+{% endblock %}

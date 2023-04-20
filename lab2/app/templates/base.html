@@ -37,6 +37,16 @@
                   <a class="nav-link {% if request.endpoint == 'cookies' %} active {% endif %}" href="{{ url_for('cookies') }}">Cookies</a>
 
                 </li>
+                <li class="nav-item">
+    
+                  <a class="nav-link {% if request.endpoint == 'form' %} active {% endif %}" href="{{ url_for('form')}}">Forms</a>
+                  
+                </li>
+                <li class="nav-item">
+    
+                  <a class="nav-link {% if request.endpoint == 'calc' %} active {% endif %}" href="{{ url_for('calc')}}">Caculator</a>
+                  
+                </li>
               </ul>
             </div>
           </div>
