@@ -30,32 +30,53 @@ def cookies():
 def form(): 
     return render_template('form.html')
 
-@app.route('/Telephone', methods=['GET',"POST"])
-def tel():
-    msg = ''
+def transformation_text(kind, nums_phone_number):
+    result = ''
+    if kind == '+7':
+        result = f'8-{nums_phone_number[1:4]}-{nums_phone_number[4:7]}-{nums_phone_number[7:9]}-{nums_phone_number[9:]}'
+    elif kind == '8':
+        result = f'8-{nums_phone_number[1:4]}-{nums_phone_number[4:7]}-{nums_phone_number[7:9]}-{nums_phone_number[9:]}'
+    elif kind == '10':
+        result = f'8-{nums_phone_number[0:3]}-{nums_phone_number[3:6]}-{nums_phone_number[6:8]}-{nums_phone_number[8:]}'
+    return result
+
+@app.route('/phone_checker', methods = ['GET', 'POST'])
+def phone_checker():
+    types_of_error = [
+        'Недопустимый ввод. Неверное количество цифр.', 
+        'Недопустимый ввод. В номере телефона встречаются недопустимые символы.',
+    ]
+    allows_chars = [' ', '(', ')', '-', '.', '+', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+    phone_number = None
+    error_msg = None
+    isnt_valid = False
+    
     if request.method == 'POST':
-        phone_number = request.form['phone_number']
-        digits = [char for char in phone_number if char.isdigit()]
-        if digits[0]  != '8' and phone_number[0] != '+' and phone_number[1] != '7':
-            msg += 'Invalid input. Invalid number of digits. Your phone number need to start with 8 or +7 '
-            return render_template('tel.html', phone_number=phone_number, msg = msg)
-        elif   len(digits) != 11:
-            msg += 'Invalid input. Invalid number, you need to enter 11 numbers.'
-            return render_template('tel.html', phone_number=phone_number, msg = msg)
-        elif not all(char.isdigit() or char in [' ','+', '(', ')', '-', '.'] for char in phone_number):
-            msg += 'Invalid input. There are invalid characters in the phone number.'
-            return render_template('tel.html', phone_number=phone_number, msg = msg)
-        else:
-            formatted_number = '8-'
-            for i in range(1, len(digits)):
-                if i in [4,7,9]:
-                    formatted_number += '-' + ''.join(digits[i])
-                else:
-                    formatted_number += ''.join(digits[i])
-            msg = 'Accepted! Phone number entered: '
-            return render_template('tel.html', msg = msg, num = formatted_number)
-    else:
-        return render_template('tel.html')
+        length_of_nums_in_phone = 0
+        nums_phone_number = ''
+        phone_number = request.form.get('phone_number')
+        for num in phone_number:
+            if num not in allows_chars:
+                error_msg = types_of_error[1]
+                isnt_valid = True
+                break
+            if num.isdigit():
+                length_of_nums_in_phone += 1
+                nums_phone_number += str(num)
+        if len(nums_phone_number) < 10:
+            return render_template('phone_checker.html', phone_number=phone_number, isnt_valid=True, error_msg=types_of_error[0])
+        if isnt_valid == False and phone_number[0] == '+' and phone_number[1] == '7' and len(nums_phone_number) == 11:
+            phone_number = transformation_text('+7', nums_phone_number)
+        elif isnt_valid == False and phone_number[0] == '8' and len(nums_phone_number) == 11:
+            phone_number = transformation_text('8', nums_phone_number)
+        elif isnt_valid == False and len(nums_phone_number) == 10:
+            phone_number = transformation_text('10', nums_phone_number)
+        elif isnt_valid == False and len(nums_phone_number) > 10:
+            error_msg = types_of_error[0]
+            isnt_valid = True
+
+    return render_template('phone_checker.html', phone_number=phone_number, isnt_valid=isnt_valid, error_msg=error_msg)
+
 
 @app.route('/calc', methods=['GET', 'POST'])
 def calc():
