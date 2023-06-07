@@ -1,6 +1,6 @@
 
-from flask import Flask, render_template, session, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_login import login_required, current_user
 from mysql_db import MySQL
 import mysql.connector
 PERMITED_PARAMS = ['login', 'password', 'last_name', 'first_name', 'middle_name', 'role_id']
@@ -13,46 +13,35 @@ app.config.from_pyfile('config.py')
 
 db = MySQL(app)
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.login_message = 'Для доступа к этой странице нужно авторизироваться.'
-login_manager.login_message_category = 'warning'
+from auth import bp as auth_bp
+from auth import init_login_manager, permission_check
 
-class User(UserMixin):
-    def __init__(self, user_id, user_login):
-        self.id = user_id
-        self.login = user_login
+from visits import bp as visits_bp
+
+app.register_blueprint(auth_bp)
+init_login_manager(app)
+
+app.register_blueprint(visits_bp)
+
+@app.before_request
+def loger():
+    if request.endpoint == 'static':
+        return
+    path = request.path
+    user_id = getattr(current_user, 'id', None)
+    query = 'INSERT INTO visit_logs(user_id, path) VALUES (%s, %s);'
+    try:
+        with db.connection().cursor(named_tuple=True) as cursor:
+            cursor.execute(query, (user_id, path))
+            db.connection().commit()
+    except mysql.connector.errors.DatabaseError:
+        db.connection().rollback()
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        login = request.form['login']
-        password = request.form['password']
-        remember = request.form.get('remember_me') == 'on'
-
-        query = 'SELECT * FROM users WHERE login = %s and password_hash = SHA2(%s, 256);'
-
-        # 1' or '1' = '1' LIMIT 1#
-        # user'#
-        # query = f"SELECT * FROM users WHERE login = '{login}' and password_hash = SHA2('{password}', 256);"
-        with db.connection().cursor(named_tuple=True) as cursor:
-            cursor.execute(query, (login, password))
-            # cursor.execute(query)
-            print(cursor.statement)
-            user = cursor.fetchone()
-
-        if user:
-            login_user(User(user.id, user.login), remember = remember)
-            flash('Вы успешно прошли аутентификацию!', 'success')
-            param_url = request.args.get('next')
-            return redirect(param_url or url_for('index'))
-        flash('Введён неправильный логин или пароль.', 'danger')
-    return render_template('login.html')
 
 @app.route('/users')
 def users():
@@ -65,6 +54,7 @@ def users():
 
 @app.route('/users/new')
 @login_required
+@permission_check('create')
 def users_new():
     roles_list = load_roles()
     return render_template('users_new.html', roles_list=roles_list, user={})
@@ -85,6 +75,7 @@ def extract_params(params_list):
 
 @app.route('/users/create', methods=['POST'])
 @login_required
+@permission_check('create')
 def create_user():
     params = extract_params(PERMITED_PARAMS)
     query = 'INSERT INTO users(login, password_hash, last_name, first_name, middle_name, role_id) VALUES (%(login)s, SHA2(%(password)s, 256), %(last_name)s, %(first_name)s, %(middle_name)s, %(role_id)s);'
@@ -100,13 +91,21 @@ def create_user():
     
     return redirect(url_for('users'))
 
+# create_user = login_required(create_user)
+
 @app.route('/users/<int:user_id>/update', methods=['POST'])
 @login_required
+@permission_check('edit')
 def update_user(user_id):
     params = extract_params(EDIT_PARAMS)
     params['id'] = user_id
-    query = ('UPDATE users SET last_name=%(last_name)s, first_name=%(first_name)s, '
-             'middle_name=%(middle_name)s, role_id=%(role_id)s WHERE id=%(id)s;')
+    if current_user.can('change_role'):
+        query = ('UPDATE users SET last_name=%(last_name)s, first_name=%(first_name)s, '
+                'middle_name=%(middle_name)s, role_id=%(role_id)s WHERE id=%(id)s;')
+    else:
+        del params['role_id']
+        query = ('UPDATE users SET last_name=%(last_name)s, first_name=%(first_name)s, '
+                'middle_name=%(middle_name)s WHERE id=%(id)s;')
     try:
         with db.connection().cursor(named_tuple=True) as cursor:
             cursor.execute(query, params)
@@ -121,6 +120,7 @@ def update_user(user_id):
 
 @app.route('/users/<int:user_id>/edit')
 @login_required
+@permission_check('edit')
 def edit_user(user_id):
     query = 'SELECT * FROM users WHERE users.id = %s;'
     cursor = db.connection().cursor(named_tuple=True)
@@ -132,6 +132,7 @@ def edit_user(user_id):
 
 @app.route('/users/<int:user_id>/delete', methods=['POST'])
 @login_required
+@permission_check('delete')
 def delete_user(user_id):
     query = 'DELETE FROM users WHERE users.id=%s;'
     try:
@@ -147,6 +148,7 @@ def delete_user(user_id):
 
 
 @app.route('/user/<int:user_id>')
+@permission_check('show')
 def show_user(user_id):
     query = 'SELECT * FROM users WHERE users.id = %s;'
     cursor = db.connection().cursor(named_tuple=True)
@@ -155,18 +157,4 @@ def show_user(user_id):
     cursor.close()
     return render_template('users_show.html', user=user)
 
-@app.route('/logout', methods=['GET'])
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
 
-@login_manager.user_loader
-def load_user(user_id):
-    query = 'SELECT * FROM users WHERE users.id = %s;'
-    cursor = db.connection().cursor(named_tuple=True)
-    cursor.execute(query, (user_id,))
-    user = cursor.fetchone()
-    cursor.close()
-    if user:
-        return User(user.id, user.login)
-    return None
