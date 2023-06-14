@@ -7,7 +7,7 @@ application = app
 app.config.from_pyfile('config.py')
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'visits'
 login_manager.login_message = 'You must be logged in to access this page.'
 login_manager.login_message_category = 'warning'
 
