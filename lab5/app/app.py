@@ -1,6 +1,5 @@
-
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask import *
+from flask_login import *
 from mysql_db import MySQL
 import mysql.connector
 PERMITED_PARAMS = ['login', 'password', 'last_name', 'first_name', 'middle_name', 'role_id']
