@@ -5,14 +5,16 @@
         <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'visits.logging' %}active{% endif %}" aria-current="page" href="{{ url_for('visits.logging') }}">Журнал посещений</a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'visits.pages_stat' %}active{% endif %}" aria-current="page"
-                href="{{ url_for('visits.pages_stat') }}">Статистика по страницам</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" aria-current="page"
-                href="{# url_for('visits.logging') #}">Статистика по пользователям</a>
-        </li>
+        {% if current_user.role_id == 7 %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'visits.pages_stat' %}active{% endif %}" aria-current="page"
+                    href="{{ url_for('visits.pages_stat') }}">Статистика по страницам</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'visits.log_stat' %}active{% endif %}" aria-current="page" 
+                    href="{{ url_for('visits.log_stat') }}">Статистика по пользователям</a>
+            </li>
+        {% endif %}
     </ul>
     {% block tab_content %}
     {% endblock %}

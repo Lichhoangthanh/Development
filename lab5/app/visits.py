@@ -1,8 +1,10 @@
 
 import io
-from flask import render_template, Blueprint, request, send_file
+from flask import *
 from app import db
 from math import ceil
+from flask_login import *
+from auth import bp as auth_bp
 PER_PAGE = 10
 
 bp = Blueprint('visits', __name__, url_prefix='/visits')
@@ -17,18 +19,29 @@ def generate_report_file(records, fields):
     f.seek(0)
     return f
 
-
+        
 
 @bp.route('/')
 def logging():
-    page = request.args.get('page', 1, type = int)
-    query = ('SELECT visit_logs.*, users.login '
-            'FROM users RIGHT JOIN visit_logs ON visit_logs.user_id = users.id '
-            'ORDER BY created_at DESC LIMIT %s OFFSET %s')
-    with db.connection().cursor(named_tuple=True) as cursor:
-        cursor.execute(query, (PER_PAGE, (page-1)*PER_PAGE))
-        logs = cursor.fetchall()
-
+    if current_user.is_admin():
+        page = request.args.get('page', 1, type = int)
+        query = ('SELECT visit_logs.*, users.login '
+                'FROM users RIGHT JOIN visit_logs ON visit_logs.user_id = users.id '
+                'ORDER BY created_at DESC LIMIT %s OFFSET %s')
+        with db.connection().cursor(named_tuple=True) as cursor:
+            cursor.execute(query, (PER_PAGE, (page-1)*PER_PAGE))
+            logs = cursor.fetchall()
+    else:
+        user_id = getattr(current_user, 'id', None)
+        page = request.args.get('page', 1, type = int)
+        query = ('SELECT visit_logs.*, users.login '
+                'FROM users RIGHT JOIN visit_logs ON visit_logs.user_id = users.id '
+                'WHERE user_id = %s '
+                'ORDER BY created_at DESC LIMIT %s OFFSET %s')
+        with db.connection().cursor(named_tuple=True) as cursor:
+            cursor.execute(query, (user_id,PER_PAGE, (page-1)*PER_PAGE))
+            logs = cursor.fetchall()
+            
     query = 'SELECT COUNT(*) AS count FROM visit_logs'
     with db.connection().cursor(named_tuple=True) as cursor:
         cursor.execute(query)
@@ -38,13 +51,30 @@ def logging():
 
     return render_template('visits/logs.html', logs = logs, last_page = last_page, current_page = page)
 
-@bp.route('/stat/pages')
-def pages_stat():
-    query = 'SELECT path, COUNT(*) as count FROM visit_logs GROUP BY path ORDER BY count DESC;'
+
+@bp.route('/stat/log')
+def log_stat():
+    query = ('SELECT users.login, COUNT(*) as count ' 
+            'FROM visit_logs ' 
+            'JOIN users ON visit_logs.user_id = users.id '
+            'GROUP BY visit_logs.user_id '
+            'ORDER BY count DESC;')
     with db.connection().cursor(named_tuple=True) as cursor:
         cursor.execute(query)
         records = cursor.fetchall()
     if request.args.get('download_csv'):
         f = generate_report_file(records, ['path', 'count'])
         return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
-    return render_template('visits/pages_stat.html', records=records)
+    return render_template('visits/log_stat.html', records=records)
+
+
+@bp.route('/stat/pages')
+def pages_stat():
+        query = 'SELECT path, COUNT(*) as count FROM visit_logs GROUP BY path ORDER BY count DESC;'
+        with db.connection().cursor(named_tuple=True) as cursor:
+            cursor.execute(query)
+            records = cursor.fetchall()
+        if request.args.get('download_csv'):
+            f = generate_report_file(records, ['path', 'count'])
+            return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
+        return render_template('visits/pages_stat.html', records=records)
