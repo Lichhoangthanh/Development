@@ -147,6 +147,7 @@ def delete_user(user_id):
 
 
 @app.route('/user/<int:user_id>')
+@login_required
 @permission_check('show')
 def show_user(user_id):
     query = 'SELECT * FROM users WHERE users.id = %s;'
@@ -154,6 +155,10 @@ def show_user(user_id):
     cursor.execute(query, (user_id,))
     user = cursor.fetchone()
     cursor.close()
-    return render_template('users_show.html', user=user)
 
+    if user is not None:
+        return render_template('users_show.html', user=user)
+    else:
+        flash('Недостаточно прав', 'warning')
+        return redirect(url_for('users'))
 

@@ -19,9 +19,8 @@ def generate_report_file(records, fields):
     f.seek(0)
     return f
 
-        
-
 @bp.route('/')
+@login_required
 def logging():
     if current_user.is_admin():
         page = request.args.get('page', 1, type = int)
@@ -53,23 +52,30 @@ def logging():
 
 
 @bp.route('/stat/log')
+@login_required
 def log_stat():
-    query = ('SELECT users.login, COUNT(*) as count ' 
-            'FROM visit_logs ' 
-            'JOIN users ON visit_logs.user_id = users.id '
-            'GROUP BY visit_logs.user_id '
-            'ORDER BY count DESC;')
-    with db.connection().cursor(named_tuple=True) as cursor:
-        cursor.execute(query)
-        records = cursor.fetchall()
-    if request.args.get('download_csv'):
-        f = generate_report_file(records, ['path', 'count'])
-        return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
-    return render_template('visits/log_stat.html', records=records)
+    if current_user.is_admin():
+        query = ('SELECT users.login, COUNT(*) as count ' 
+                'FROM visit_logs ' 
+                'JOIN users ON visit_logs.user_id = users.id '
+                'GROUP BY visit_logs.user_id '
+                'ORDER BY count DESC;')
+        with db.connection().cursor(named_tuple=True) as cursor:
+            cursor.execute(query)
+            records = cursor.fetchall()
+        if request.args.get('download_csv'):
+            f = generate_report_file(records, ['path', 'count'])
+            return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
+        return render_template('visits/log_stat.html', records=records)
+    else:
+        flash('Недостаточно прав', 'warning')
+        return redirect(url_for('visits.logging'))
 
 
 @bp.route('/stat/pages')
+@login_required
 def pages_stat():
+    if current_user.is_admin():
         query = 'SELECT path, COUNT(*) as count FROM visit_logs GROUP BY path ORDER BY count DESC;'
         with db.connection().cursor(named_tuple=True) as cursor:
             cursor.execute(query)
@@ -78,3 +84,6 @@ def pages_stat():
             f = generate_report_file(records, ['path', 'count'])
             return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
         return render_template('visits/pages_stat.html', records=records)
+    else:
+        flash('Недостаточно прав', 'warning')
+        return redirect(url_for('visits.logging'))
