@@ -1,0 +1,12 @@
+"ix":  (index)
+
+"uq": "uq_%(table_name)s_%(column_0_name)s": Chuỗi định dạng cho ràng buộc duy nhất (unique). % (table_name) s và % (column_0_name) s là các placeholder cho tên bảng và tên cột đầu tiên trong ràng buộc duy nhất.
+
+"ck": "ck_%(table_name)s_%(constraint_name)s": Chuỗi định dạng cho ràng buộc kiểm tra (check). % (table_name) s và % (constraint_name) s là các placeholder cho tên bảng và tên ràng buộc.
+
+"fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s": Chuỗi định dạng cho ràng buộc khóa ngoại (foreign key). % (table_name) s, % (column_0_name) s và % (referred_table_name) s là các placeholder cho tên bảng, tên cột đầu tiên và tên bảng được tham chiếu trong ràng buộc khóa ngoại.
+
+"pk": "pk_%(table_name)s": Chuỗi định dạng cho ràng buộc khóa chính (primary key). % (table_name) s là một placeholder cho tên bảng trong ràng buộc khóa chính.
+
+
+2:32:57

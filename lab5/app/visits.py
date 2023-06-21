@@ -51,10 +51,37 @@ def logging():
     return render_template('visits/logs.html', logs = logs, last_page = last_page, current_page = page)
 
 
+@bp.route('/stat/pages')
+@login_required
+def pages_stat():
+    if current_user.is_admin():
+        page = request.args.get('page', 1, type = int)
+        query = 'SELECT path, COUNT(*) as count FROM visit_logs GROUP BY path ORDER BY count DESC LIMIT %s OFFSET %s;'
+        with db.connection().cursor(named_tuple=True) as cursor:
+            cursor.execute(query, (PER_PAGE, (page-1)*PER_PAGE))
+            records = cursor.fetchall()
+        
+        query = 'SELECT COUNT(*) AS count FROM (SELECT path, COUNT(*) as count FROM visit_logs GROUP BY path ORDER BY `count` DESC) as result'
+        with db.connection().cursor(named_tuple=True) as cursor:
+            cursor.execute(query)
+            count = cursor.fetchone().count
+    
+        last_page = ceil(count/PER_PAGE)
+        
+        if request.args.get('download_csv'):
+            f = generate_report_file(records, ['path', 'count'])
+            return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
+        return render_template('visits/pages_stat.html', records=records,last_page = last_page, current_page = page)
+    else:
+        flash('Недостаточно прав', 'warning')
+        return redirect(url_for('visits.logging'))
+    
+    
 @bp.route('/stat/log')
 @login_required
 def log_stat():
     if current_user.is_admin():
+        page = request.args.get('page', 1, type = int)
         query = ('SELECT users.login, COUNT(*) as count ' 
                 'FROM visit_logs ' 
                 'JOIN users ON visit_logs.user_id = users.id '
@@ -63,27 +90,19 @@ def log_stat():
         with db.connection().cursor(named_tuple=True) as cursor:
             cursor.execute(query)
             records = cursor.fetchall()
-        if request.args.get('download_csv'):
-            f = generate_report_file(records, ['path', 'count'])
-            return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
-        return render_template('visits/log_stat.html', records=records)
-    else:
-        flash('Недостаточно прав', 'warning')
-        return redirect(url_for('visits.logging'))
-
-
-@bp.route('/stat/pages')
-@login_required
-def pages_stat():
-    if current_user.is_admin():
-        query = 'SELECT path, COUNT(*) as count FROM visit_logs GROUP BY path ORDER BY count DESC;'
+            
+        query = 'SELECT COUNT(*) AS count FROM (SELECT users.login, COUNT(*) as count FROM visit_logs JOIN users ON visit_logs.user_id = users.id GROUP BY visit_logs.user_id ORDER BY count DESC) as result'
         with db.connection().cursor(named_tuple=True) as cursor:
             cursor.execute(query)
-            records = cursor.fetchall()
+            count = cursor.fetchone().count
+    
+        last_page = ceil(count/PER_PAGE)
+        
         if request.args.get('download_csv'):
             f = generate_report_file(records, ['path', 'count'])
             return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
-        return render_template('visits/pages_stat.html', records=records)
+        return render_template('visits/log_stat.html', records=records,last_page = 1, current_page = page)
     else:
         flash('Недостаточно прав', 'warning')
         return redirect(url_for('visits.logging'))
+
