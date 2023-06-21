@@ -100,7 +100,7 @@ def log_stat():
         
         if request.args.get('download_csv'):
             f = generate_report_file(records, ['path', 'count'])
-            return send_file(f, mimetype='text/csv', as_attachment=True, download_name='pages_stat.csv')
+            return send_file(f, mimetype='text/csv', as_attachment=True, download_name='log_stat.csv')
         return render_template('visits/log_stat.html', records=records,last_page = 1, current_page = page)
     else:
         flash('Недостаточно прав', 'warning')
