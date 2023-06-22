@@ -2,8 +2,10 @@ from flask import *
 from flask_login import *
 from mysql_db import MySQL
 import mysql.connector
-PERMITED_PARAMS = ['login', 'password', 'last_name', 'first_name', 'middle_name', 'role_id']
+from math import ceil
+PERMITED_PARAMS = ['title', 'description', 'year', 'publisher', 'author', 'page_count', 'cover_id']
 EDIT_PARAMS = ['last_name', 'first_name', 'middle_name', 'role_id']
+PER_PAGE = 3
 
 app = Flask(__name__)
 application = app
@@ -42,21 +44,29 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/users')
-def users():
-    query = 'SELECT users.*, roles.name AS role_name FROM users LEFT JOIN roles ON roles.id = users.role_id'
+@app.route('/books')
+def books():
+    page = request.args.get('page', 1, type = int)
+    query = ('SELECT books.title, books.description, books.year, books.publisher, books.author, books.page_count, covers.filename FROM books JOIN covers ON books.cover_id = covers.id LIMIT %s OFFSET %s')
+    with db.connection().cursor(named_tuple=True) as cursor:
+        cursor.execute(query,(PER_PAGE, (page-1)*PER_PAGE))
+        books_list = cursor.fetchall()
+    
+    query = 'SELECT COUNT(*) AS count FROM (SELECT books.title, books.description, books.year, books.publisher, books.author, books.page_count, covers.filename FROM books JOIN covers ON books.cover_id = covers.id) as result'
     with db.connection().cursor(named_tuple=True) as cursor:
         cursor.execute(query)
-        users_list = cursor.fetchall()
+        count = cursor.fetchone().count
     
-    return render_template('users.html', users_list=users_list)
+    last_page = ceil(count/PER_PAGE)
+    
+    return render_template('books.html', books_list=books_list, last_page = last_page, current_page = page)
 
-@app.route('/users/new')
+@app.route('/books/new')
 @login_required
 @permission_check('create')
 def users_new():
     roles_list = load_roles()
-    return render_template('users_new.html', roles_list=roles_list, user={})
+    return render_template('books_new.html', roles_list=roles_list, book={})
 
 def load_roles():
     query = 'SELECT * FROM roles;'
@@ -72,12 +82,12 @@ def extract_params(params_list):
         params_dict[param] = request.form[param] or None
     return params_dict
 
-@app.route('/users/create', methods=['POST'])
+@app.route('/books/create', methods=['POST'])
 @login_required
 @permission_check('create')
 def create_user():
     params = extract_params(PERMITED_PARAMS)
-    query = 'INSERT INTO users(login, password_hash, last_name, first_name, middle_name, role_id) VALUES (%(login)s, SHA2(%(password)s, 256), %(last_name)s, %(first_name)s, %(middle_name)s, %(role_id)s);'
+    query = 'INSERT INTO books (title, description, year, publisher, author, page_count, cover_id) VALUES (%(title)s, %(description)s, %(year)s, %(publisher)s, %(author)s, %(page_count)s, %(cover_id)s'
     try:
         with db.connection().cursor(named_tuple=True) as cursor:
             cursor.execute(query, params)
@@ -86,18 +96,18 @@ def create_user():
     except mysql.connector.errors.DatabaseError:
         db.connection().rollback()
         flash('При сохранении данных возникла ошибка.', 'danger')
-        return render_template('users_new.html', user = params, roles_list = load_roles())
+        return render_template('books_new.html', book = params, roles_list = load_roles())
     
-    return redirect(url_for('users'))
+    return redirect(url_for('books'))
 
 # create_user = login_required(create_user)
 
-@app.route('/users/<int:user_id>/update', methods=['POST'])
+@app.route('/users/<int:book_id>/update', methods=['POST'])
 @login_required
 @permission_check('edit')
-def update_user(user_id):
+def update_book(book_id):
     params = extract_params(EDIT_PARAMS)
-    params['id'] = user_id
+    params['id'] = book_id
     if current_user.can('change_role'):
         query = ('UPDATE users SET last_name=%(last_name)s, first_name=%(first_name)s, '
                 'middle_name=%(middle_name)s, role_id=%(role_id)s WHERE id=%(id)s;')

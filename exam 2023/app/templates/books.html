@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% from 'pagination.html' import pagination %}
 {% block head %}
 {{ super() }}
 <script defer src="{{ url_for('static', filename='users.js')}}"></script>
@@ -13,13 +13,25 @@
                 №
             </th>
             <th>
+                Cover
+            </th>
+            <th>
                 ФИО
             </th>
             <th>
-                login
+                Author
             </th>
             <th>
-                role
+                Year
+            </th>
+            <th>
+                Publisher
+            </th>
+            <th>
+                Author
+            </th>
+            <th>
+                Page_count
             </th>
             <th>
                 action
@@ -27,23 +39,32 @@
         </tr>
     </thead>
     <tbody>
-        {% for user in users_list %}
+        {% for book in books_list %}
         <tr>
             <td>
                 {{loop.index}}
             </td>
-            <td id="fullName">
-                {{user.last_name}} {{user.first_name}} 
-                {% if user.middle_name %}
-                {{user.middle_name}}
-                {% endif %}
+            <td>
+                <img class="card-img-top" src="{{ url_for('static', filename = 'img/' + book.filename  ) }}" alt="Card image cap" style = "height:200px">
+            </td>
+            <td id="Title">
+                {{ book.title }}
             </td>
 
             <td>
-                {{user.login}}
+                {{ book.description }}
             </td>
             <td>
-                {{ user.role_name }}
+                {{ book.year }}
+            </td>
+            <td>
+                {{ book.publisher }}
+            </td>
+            <td>
+                {{ book.author }}
+            </td>
+            <td>
+                {{ book.page_count }}
             </td>
             <td>
                 <div class="btn-group" role="group">
@@ -93,4 +114,5 @@
 {% if current_user.is_authenticated and current_user.can('create') %}
 <a href="{{url_for('users_new')}}" class="btn btn-primary">Добавить пользователя</a>
 {% endif %}
+{{ pagination(current_page, last_page, request.endpoint) }}
 {% endblock %}

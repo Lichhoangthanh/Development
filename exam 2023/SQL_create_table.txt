@@ -1,0 +1,65 @@
+1) 
+CREATE TABLE genres (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL UNIQUE
+);
+
+2)
+CREATE TABLE covers (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  filename VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(255) NOT NULL,
+  md5_hash VARCHAR(255) NOT NULL
+);
+3)
+CREATE TABLE books (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  year YEAR NOT NULL,
+  publisher VARCHAR(255) NOT NULL,
+  author VARCHAR(255) NOT NULL,
+  page_count INT NOT NULL,
+  cover_id INT NOT NULL,
+  FOREIGN KEY (cover_id) REFERENCES covers(id)
+);
+
+4)
+CREATE TABLE book_genre (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  book_id INT NOT NULL,
+  genre_id INT NOT NULL,
+  FOREIGN KEY (book_id) REFERENCES books(id),
+  FOREIGN KEY (genre_id) REFERENCES genres(id)
+);
+
+5)
+CREATE TABLE roles (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL
+);
+
+6)
+CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  login VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  first_name VARCHAR(255) NOT NULL,
+  middle_name VARCHAR(255),
+  role_id INT NOT NULL,
+  FOREIGN KEY (role_id) REFERENCES roles(id)
+);
+
+7)
+CREATE TABLE reviews (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  book_id INT NOT NULL,
+  user_id INT NOT NULL,
+  rating INT NOT NULL,
+  text TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (book_id) REFERENCES books(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
